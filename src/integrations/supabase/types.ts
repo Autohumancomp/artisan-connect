@@ -117,7 +117,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      my_artisan_id: { Args: never; Returns: string }
       my_artisan_id_actif: { Args: never; Returns: string }
     }
     Enums: {
