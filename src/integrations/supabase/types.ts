@@ -14,16 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      artisans: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          modele_message: string
+          nom_entreprise: string
+          statut_abonnement: Database["public"]["Enums"]["statut_abonnement"]
+          telephone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          modele_message?: string
+          nom_entreprise: string
+          statut_abonnement?: Database["public"]["Enums"]["statut_abonnement"]
+          telephone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          modele_message?: string
+          nom_entreprise?: string
+          statut_abonnement?: Database["public"]["Enums"]["statut_abonnement"]
+          telephone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          adresse: string | null
+          artisan_id: string
+          created_at: string
+          date_dernier_entretien: string | null
+          date_prochaine_relance: string | null
+          derniere_relance_envoyee: string | null
+          email: string | null
+          frequence_relance_mois: number
+          id: string
+          nom_client: string
+          notes: string | null
+          statut_relance: Database["public"]["Enums"]["statut_relance"]
+          telephone: string | null
+          type_equipement: string | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          artisan_id?: string
+          created_at?: string
+          date_dernier_entretien?: string | null
+          date_prochaine_relance?: string | null
+          derniere_relance_envoyee?: string | null
+          email?: string | null
+          frequence_relance_mois?: number
+          id?: string
+          nom_client: string
+          notes?: string | null
+          statut_relance?: Database["public"]["Enums"]["statut_relance"]
+          telephone?: string | null
+          type_equipement?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          artisan_id?: string
+          created_at?: string
+          date_dernier_entretien?: string | null
+          date_prochaine_relance?: string | null
+          derniere_relance_envoyee?: string | null
+          email?: string | null
+          frequence_relance_mois?: number
+          id?: string
+          nom_client?: string
+          notes?: string | null
+          statut_relance?: Database["public"]["Enums"]["statut_relance"]
+          telephone?: string | null
+          type_equipement?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_artisan_id_fkey"
+            columns: ["artisan_id"]
+            isOneToOne: false
+            referencedRelation: "artisans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      my_artisan_id: { Args: never; Returns: string }
+      my_artisan_id_actif: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      statut_abonnement: "essai" | "actif" | "suspendu"
+      statut_relance: "a_venir" | "a_relancer" | "relance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +249,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      statut_abonnement: ["essai", "actif", "suspendu"],
+      statut_relance: ["a_venir", "a_relancer", "relance"],
+    },
   },
 } as const
