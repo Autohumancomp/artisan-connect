@@ -16,8 +16,10 @@ export type Database = {
     Tables: {
       artisans: {
         Row: {
+          adresse: string | null
           created_at: string
           email: string
+          email_contact: string | null
           id: string
           modele_message: string
           nom_entreprise: string
@@ -27,8 +29,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          adresse?: string | null
           created_at?: string
           email: string
+          email_contact?: string | null
           id?: string
           modele_message?: string
           nom_entreprise: string
@@ -38,8 +42,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          adresse?: string | null
           created_at?: string
           email?: string
+          email_contact?: string | null
           id?: string
           modele_message?: string
           nom_entreprise?: string

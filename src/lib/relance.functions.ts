@@ -33,7 +33,7 @@ export const envoyerRelance = createServerFn({ method: "POST" })
 
     const { data: artisan, error: artisanError } = await supabase
       .from("artisans")
-      .select("nom_entreprise, email, telephone, modele_message")
+      .select("nom_entreprise, email, email_contact, adresse, telephone, modele_message")
       .eq("id", client.artisan_id)
       .maybeSingle();
 
@@ -52,10 +52,14 @@ export const envoyerRelance = createServerFn({ method: "POST" })
       throw new Error("Le service d'envoi d'email n'est pas configuré.");
     }
 
+    const emailContact = artisan.email_contact?.trim() || artisan.email;
+
     const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#1f2937">
       ${echapper(corps).replaceAll("\n", "<br />")}
       <p style="margin-top:24px;color:#6b7280;font-size:13px">
         ${echapper(artisan.nom_entreprise)}${artisan.telephone ? ` · ${echapper(artisan.telephone)}` : ""}
+        ${artisan.adresse ? `<br />${echapper(artisan.adresse)}` : ""}
+        <br />${echapper(emailContact)}
       </p>
     </div>`;
 

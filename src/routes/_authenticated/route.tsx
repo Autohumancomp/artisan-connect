@@ -12,11 +12,17 @@ import { Hammer, LayoutDashboard, Loader2, LogOut, Settings, Users } from "lucid
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { ArtisanRow } from "@/lib/fidel";
+import { oublierChoixSession, sessionExpiree } from "@/lib/session-persistance";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    if (sessionExpiree()) {
+      await supabase.auth.signOut();
+      oublierChoixSession();
+      throw redirect({ to: "/auth" });
+    }
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     return { user: data.user };
@@ -56,6 +62,7 @@ function Layout() {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
+    oublierChoixSession();
     navigate({ to: "/auth", replace: true });
   }
 
