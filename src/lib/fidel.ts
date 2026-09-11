@@ -23,6 +23,8 @@ export interface ArtisanRow {
   user_id: string | null;
   nom_entreprise: string;
   email: string;
+  email_contact: string | null;
+  adresse: string | null;
   telephone: string | null;
   modele_message: string;
   statut_abonnement: StatutAbonnement;
