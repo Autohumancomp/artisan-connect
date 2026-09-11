@@ -34,6 +34,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [resterConnecte, setResterConnecte] = useState(true);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -43,6 +45,7 @@ function AuthPage() {
 
   async function connexion(event: React.FormEvent) {
     event.preventDefault();
+    setErreur(null);
     setEnCours(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -50,11 +53,15 @@ function AuthPage() {
     });
     setEnCours(false);
     if (error) {
-      toast.error("Connexion impossible", {
-        description: "Vérifiez votre email et votre mot de passe.",
-      });
+      const message =
+        error.message.toLowerCase().includes("invalid") || error.status === 400
+          ? "Email ou mot de passe incorrect."
+          : "Connexion impossible pour le moment. Réessayez dans un instant.";
+      setErreur(message);
+      toast.error(message);
       return;
     }
+    memoriserChoixSession(resterConnecte);
     navigate({ to: "/tableau-de-bord", replace: true });
   }
 
