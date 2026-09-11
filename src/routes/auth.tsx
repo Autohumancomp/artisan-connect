@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { memoriserChoixSession } from "@/lib/session-persistance";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -103,6 +105,26 @@ function AuthPage() {
               onChange={(e) => setMotDePasse(e.target.value)}
             />
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="rester"
+              checked={resterConnecte}
+              onCheckedChange={(valeur) => setResterConnecte(valeur === true)}
+            />
+            <Label htmlFor="rester" className="text-sm font-normal">
+              Rester connecté sur cet appareil
+            </Label>
+          </div>
+
+          {erreur ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {erreur}
+            </p>
+          ) : null}
+
           <Button type="submit" className="w-full" disabled={enCours}>
             {enCours ? <Loader2 className="size-4 animate-spin" /> : null}
             Se connecter
