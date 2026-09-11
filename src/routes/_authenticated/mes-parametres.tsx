@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +18,12 @@ export const Route = createFileRoute("/_authenticated/mes-parametres")({
       {
         name: "description",
         content:
-          "Personnalisez le message de relance envoyé à vos clients et consultez les coordonnées de votre entreprise.",
+          "Personnalisez le message de relance envoyé à vos clients et mettez à jour les coordonnées de votre entreprise.",
       },
       { property: "og:title", content: "Mes paramètres — FidèlArtisan" },
       {
         property: "og:description",
-        content: "Modifiez votre modèle de message de relance d'entretien.",
+        content: "Modifiez vos coordonnées et votre modèle de message de relance d'entretien.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -34,10 +35,20 @@ export const Route = createFileRoute("/_authenticated/mes-parametres")({
 function Parametres() {
   const { data: artisan } = useArtisan();
   const queryClient = useQueryClient();
+
+  const [nomEntreprise, setNomEntreprise] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [emailContact, setEmailContact] = useState("");
+  const [adresse, setAdresse] = useState("");
   const [modele, setModele] = useState("");
 
   useEffect(() => {
-    if (artisan) setModele(artisan.modele_message);
+    if (!artisan) return;
+    setNomEntreprise(artisan.nom_entreprise);
+    setTelephone(artisan.telephone ?? "");
+    setEmailContact(artisan.email_contact ?? "");
+    setAdresse(artisan.adresse ?? "");
+    setModele(artisan.modele_message);
   }, [artisan]);
 
   const sauver = useMutation({
@@ -45,12 +56,18 @@ function Parametres() {
       if (!artisan) throw new Error("Compte introuvable.");
       const { error } = await supabase
         .from("artisans")
-        .update({ modele_message: modele })
+        .update({
+          nom_entreprise: nomEntreprise.trim() || artisan.nom_entreprise,
+          telephone: telephone.trim() || null,
+          email_contact: emailContact.trim() || null,
+          adresse: adresse.trim() || null,
+          modele_message: modele,
+        })
         .eq("id", artisan.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
-      toast.success("Modèle de message enregistré");
+      toast.success("Paramètres enregistrés");
       await queryClient.invalidateQueries({ queryKey: ["artisan"] });
     },
     onError: (error: Error) =>
@@ -60,30 +77,65 @@ function Parametres() {
   if (!artisan) return null;
 
   return (
-    <div className="space-y-6">
+    <form
+      className="space-y-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        sauver.mutate();
+      }}
+    >
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Mes paramètres</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Votre message de relance et vos coordonnées.
+          Vos coordonnées et votre message de relance.
         </p>
       </div>
 
-      <section className="panel p-4">
+      <section className="panel space-y-4 p-4">
         <h2 className="text-sm font-semibold">Mon entreprise</h2>
-        <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-          <div>
-            <dt className="text-xs text-muted-foreground">Nom</dt>
-            <dd className="font-medium">{artisan.nom_entreprise}</dd>
+
+        <div className="space-y-2">
+          <Label htmlFor="nom">Nom de l'entreprise</Label>
+          <Input id="nom" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="tel">Téléphone</Label>
+            <Input
+              id="tel"
+              type="tel"
+              inputMode="tel"
+              placeholder="06 12 34 56 78"
+              value={telephone}
+              onChange={(e) => setTelephone(e.target.value)}
+            />
           </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Email</dt>
-            <dd className="font-medium break-all">{artisan.email}</dd>
+          <div className="space-y-2">
+            <Label htmlFor="contact">Email de contact affiché aux clients</Label>
+            <Input
+              id="contact"
+              type="email"
+              inputMode="email"
+              placeholder={artisan.email}
+              value={emailContact}
+              onChange={(e) => setEmailContact(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Laissez vide pour utiliser votre email de connexion ({artisan.email}).
+            </p>
           </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Téléphone</dt>
-            <dd className="font-medium">{artisan.telephone || "—"}</dd>
-          </div>
-        </dl>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="adresse">Adresse de l'entreprise (optionnel)</Label>
+          <Input
+            id="adresse"
+            value={adresse}
+            onChange={(e) => setAdresse(e.target.value)}
+            placeholder="12 rue des Artisans, 75011 Paris"
+          />
+        </div>
       </section>
 
       <section className="panel p-4">
@@ -102,13 +154,14 @@ function Parametres() {
             onChange={(event) => setModele(event.target.value)}
           />
         </div>
-        <div className="mt-4 flex justify-end">
-          <Button onClick={() => sauver.mutate()} disabled={sauver.isPending}>
-            {sauver.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Enregistrer
-          </Button>
-        </div>
       </section>
-    </div>
+
+      <div className="flex justify-end">
+        <Button type="submit" className="w-full sm:w-auto" disabled={sauver.isPending}>
+          {sauver.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          Enregistrer
+        </Button>
+      </div>
+    </form>
   );
 }
