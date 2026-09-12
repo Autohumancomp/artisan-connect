@@ -113,7 +113,7 @@ function ClientsPage() {
     setEnvoiEnCours(client.id);
     try {
       await envoyer({ data: { clientId: client.id } });
-      toast.success(`Relance envoyée à ${client.email}`);
+      toast.success(`Email envoyé à ${client.nom_client}`, { description: client.email });
       await queryClient.invalidateQueries({ queryKey: ["clients"] });
     } catch (error) {
       toast.error("Envoi impossible", {
