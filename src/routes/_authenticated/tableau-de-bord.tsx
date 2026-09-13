@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, CalendarClock, Loader2, Users } from "lucide-react";
+import { AlertTriangle, CalendarClock, Loader2, MailCheck, Users } from "lucide-react";
 
 import { PrioriteBadge } from "@/components/badges";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,11 @@ export const Route = createFileRoute("/_authenticated/tableau-de-bord")({
   component: Dashboard,
 });
 
+function debutDuMois(): string {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+}
+
 function Dashboard() {
   const { data, isPending } = useQuery({
     queryKey: ["clients"],
@@ -37,6 +42,19 @@ function Dashboard() {
         .order("date_prochaine_relance", { ascending: true, nullsFirst: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as ClientRow[];
+    },
+  });
+
+  const { data: relancesDuMois } = useQuery({
+    queryKey: ["relances-du-mois"],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from("historique_relances")
+        .select("id", { count: "exact", head: true })
+        .eq("statut", "envoye")
+        .gte("envoye_le", debutDuMois());
+      if (error) throw new Error(error.message);
+      return count ?? 0;
     },
   });
 
@@ -70,7 +88,7 @@ function Dashboard() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Relances à venir (30 j)"
           valeur={aVenir.length}
@@ -83,6 +101,11 @@ function Dashboard() {
           alerte={enRetard.length > 0}
         />
         <Stat label="Clients au total" valeur={clients.length} icon={<Users className="size-4" />} />
+        <Stat
+          label="Relances envoyées ce mois-ci"
+          valeur={relancesDuMois ?? 0}
+          icon={<MailCheck className="size-4" />}
+        />
       </div>
 
       <section className="panel overflow-hidden">
