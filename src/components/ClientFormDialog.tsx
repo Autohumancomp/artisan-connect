@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { History, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,7 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import type { ClientRow } from "@/lib/fidel";
+import {
+  emailValide,
+  formatDateHeure,
+  type ClientRow,
+  type HistoriqueRelanceRow,
+} from "@/lib/fidel";
+import { useArtisan } from "@/routes/_authenticated/route";
 
 interface Champs {
   nom_client: string;
@@ -29,16 +35,18 @@ interface Champs {
   notes: string;
 }
 
-const vide: Champs = {
-  nom_client: "",
-  telephone: "",
-  email: "",
-  adresse: "",
-  type_equipement: "",
-  date_dernier_entretien: "",
-  frequence_relance_mois: "12",
-  notes: "",
-};
+function vide(frequenceDefaut: number): Champs {
+  return {
+    nom_client: "",
+    telephone: "",
+    email: "",
+    adresse: "",
+    type_equipement: "",
+    date_dernier_entretien: "",
+    frequence_relance_mois: String(frequenceDefaut),
+    notes: "",
+  };
+}
 
 function depuisClient(client: ClientRow): Champs {
   return {
@@ -71,16 +79,37 @@ export function ClientFormDialog({
   onOpenChange: (open: boolean) => void;
   client: ClientRow | null;
 }) {
-  const [champs, setChamps] = useState<Champs>(vide);
+  const { data: artisan } = useArtisan();
+  const frequenceDefaut = artisan?.frequence_relance_defaut ?? 12;
+  const [champs, setChamps] = useState<Champs>(() => vide(frequenceDefaut));
+  const [erreurEmail, setErreurEmail] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (open) setChamps(client ? depuisClient(client) : vide);
-  }, [open, client]);
+    if (open) {
+      setErreurEmail(null);
+      setChamps(client ? depuisClient(client) : vide(frequenceDefaut));
+    }
+  }, [open, client, frequenceDefaut]);
+
+  const { data: historique } = useQuery({
+    queryKey: ["historique", client?.id],
+    enabled: open && Boolean(client),
+    queryFn: async (): Promise<HistoriqueRelanceRow[]> => {
+      const { data, error } = await supabase
+        .from("historique_relances")
+        .select("*")
+        .eq("client_id", client!.id)
+        .order("envoye_le", { ascending: false })
+        .limit(10);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as HistoriqueRelanceRow[];
+    },
+  });
 
   const enregistrer = useMutation({
     mutationFn: async () => {
-      const frequence = Math.max(1, Number(champs.frequence_relance_mois) || 12);
+      const frequence = Math.max(1, Number(champs.frequence_relance_mois) || frequenceDefaut);
       const payload = {
         nom_client: champs.nom_client.trim(),
         telephone: champs.telephone.trim() || null,
@@ -115,6 +144,18 @@ export function ClientFormDialog({
 
   function set<K extends keyof Champs>(cle: K, valeur: string) {
     setChamps((prev) => ({ ...prev, [cle]: valeur }));
+    if (cle === "email") setErreurEmail(null);
+  }
+
+  function soumettre(event: React.FormEvent) {
+    event.preventDefault();
+    const email = champs.email.trim();
+    if (email && !emailValide(email)) {
+      setErreurEmail("Format d'email invalide (exemple : client@domaine.fr).");
+      return;
+    }
+    setErreurEmail(null);
+    enregistrer.mutate();
   }
 
   return (
@@ -127,13 +168,7 @@ export function ClientFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            enregistrer.mutate();
-          }}
-        >
+        <form className="space-y-4" onSubmit={soumettre}>
           <div className="space-y-2">
             <Label htmlFor="nom">Nom du client</Label>
             <Input
@@ -161,9 +196,15 @@ export function ClientFormDialog({
                 id="mail"
                 type="email"
                 inputMode="email"
+                aria-invalid={erreurEmail !== null}
                 value={champs.email}
                 onChange={(e) => set("email", e.target.value)}
               />
+              {erreurEmail ? (
+                <p role="alert" className="text-xs text-destructive">
+                  {erreurEmail}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -218,6 +259,32 @@ export function ClientFormDialog({
               onChange={(e) => set("notes", e.target.value)}
             />
           </div>
+
+          {client ? (
+            <section className="rounded-md border border-border p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <History className="size-4 text-muted-foreground" />
+                Historique des relances
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Dernière relance envoyée : {formatDateHeure(client.derniere_relance_envoyee)}
+              </p>
+              {historique && historique.length > 0 ? (
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {historique.map((ligne) => (
+                    <li key={ligne.id} className="flex justify-between gap-2">
+                      <span>{formatDateHeure(ligne.envoye_le)}</span>
+                      <span className={ligne.statut === "envoye" ? "" : "text-destructive"}>
+                        {ligne.statut === "envoye" ? "Envoyée" : "Échec"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">Aucune relance enregistrée.</p>
+              )}
+            </section>
+          ) : null}
 
           <DialogFooter>
             <Button

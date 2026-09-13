@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           email: string
           email_contact: string | null
+          frequence_relance_defaut: number
           id: string
           modele_message: string
           nom_entreprise: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           email: string
           email_contact?: string | null
+          frequence_relance_defaut?: number
           id?: string
           modele_message?: string
           nom_entreprise: string
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           email?: string
           email_contact?: string | null
+          frequence_relance_defaut?: number
           id?: string
           modele_message?: string
           nom_entreprise?: string
@@ -114,6 +117,54 @@ export type Database = {
             columns: ["artisan_id"]
             isOneToOne: false
             referencedRelation: "artisans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historique_relances: {
+        Row: {
+          artisan_id: string
+          client_id: string
+          created_at: string
+          destinataire: string | null
+          envoye_le: string
+          erreur: string | null
+          id: string
+          statut: string
+        }
+        Insert: {
+          artisan_id: string
+          client_id: string
+          created_at?: string
+          destinataire?: string | null
+          envoye_le?: string
+          erreur?: string | null
+          id?: string
+          statut?: string
+        }
+        Update: {
+          artisan_id?: string
+          client_id?: string
+          created_at?: string
+          destinataire?: string | null
+          envoye_le?: string
+          erreur?: string | null
+          id?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historique_relances_artisan_id_fkey"
+            columns: ["artisan_id"]
+            isOneToOne: false
+            referencedRelation: "artisans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historique_relances_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]

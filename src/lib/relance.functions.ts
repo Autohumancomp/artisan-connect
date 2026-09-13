@@ -82,15 +82,34 @@ export const envoyerRelance = createServerFn({ method: "POST" })
     if (!response.ok) {
       const body = await response.text();
       console.error(`Resend a refusé l'envoi [${response.status}]: ${body}`);
+      await supabase.from("historique_relances").insert({
+        client_id: client.id,
+        artisan_id: client.artisan_id,
+        destinataire: client.email,
+        statut: "echec",
+        erreur: `[${response.status}] ${body}`.slice(0, 500),
+      });
       throw new Error(`L'email n'a pas pu être envoyé [${response.status}]: ${body}`);
     }
 
+    const envoiLe = new Date().toISOString();
+
     const { error: updateError } = await supabase
       .from("clients")
-      .update({ statut_relance: "relance", derniere_relance_envoyee: new Date().toISOString() })
+      .update({ statut_relance: "relance", derniere_relance_envoyee: envoiLe })
       .eq("id", client.id);
 
     if (updateError) throw new Error(updateError.message);
 
+    const { error: historiqueError } = await supabase.from("historique_relances").insert({
+      client_id: client.id,
+      artisan_id: client.artisan_id,
+      destinataire: client.email,
+      statut: "envoye",
+      envoye_le: envoiLe,
+    });
+    if (historiqueError) console.error(`Historique non enregistré: ${historiqueError.message}`);
+
     return { ok: true as const, destinataire: client.email };
   });
+

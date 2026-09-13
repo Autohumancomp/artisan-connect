@@ -28,6 +28,17 @@ export interface ArtisanRow {
   telephone: string | null;
   modele_message: string;
   statut_abonnement: StatutAbonnement;
+  frequence_relance_defaut: number;
+}
+
+export interface HistoriqueRelanceRow {
+  id: string;
+  client_id: string;
+  artisan_id: string;
+  destinataire: string | null;
+  statut: string;
+  erreur: string | null;
+  envoye_le: string;
 }
 
 export const STATUT_LABELS: Record<StatutRelance, string> = {
@@ -66,6 +77,21 @@ export function formatDate(date: string | null): string {
     month: "short",
     year: "numeric",
   });
+}
+
+export function formatDateHeure(valeur: string | null): string {
+  if (!valeur) return "—";
+  return new Date(valeur).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function emailValide(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.trim());
 }
 
 export function appliquerModele(modele: string, nomClient: string, equipement: string): string {
