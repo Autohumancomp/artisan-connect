@@ -75,6 +75,18 @@ function ClientsPage() {
   const [clientEdite, setClientEdite] = useState<ClientRow | null>(null);
   const [aSupprimer, setASupprimer] = useState<ClientRow | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState<string | null>(null);
+  const [importOuvert, setImportOuvert] = useState(false);
+  const [tri, setTri] = useState<{ cle: CleTri; sens: "asc" | "desc" }>({
+    cle: "date_prochaine_relance",
+    sens: "asc",
+  });
+  const { data: artisan } = useArtisan();
+
+  function basculerTri(cle: CleTri) {
+    setTri((prev) =>
+      prev.cle === cle ? { cle, sens: prev.sens === "asc" ? "desc" : "asc" } : { cle, sens: "asc" },
+    );
+  }
 
   const { data, isPending } = useQuery({
     queryKey: ["clients"],
@@ -103,7 +115,7 @@ function ClientsPage() {
 
   const clients = useMemo(() => {
     const terme = recherche.trim().toLowerCase();
-    return (data ?? []).filter((client) => {
+    const filtres = (data ?? []).filter((client) => {
       const correspond =
         !terme ||
         [client.nom_client, client.telephone, client.email, client.type_equipement]
@@ -114,7 +126,10 @@ function ClientsPage() {
         filtrePriorite === "toutes" || prioriteDe(client.date_prochaine_relance) === filtrePriorite;
       return correspond && statutOk && prioriteOk;
     });
-  }, [data, recherche, filtreStatut, filtrePriorite]);
+
+    const facteur = tri.sens === "asc" ? 1 : -1;
+    return [...filtres].sort((a, b) => comparer(a, b, tri.cle) * facteur);
+  }, [data, recherche, filtreStatut, filtrePriorite, tri]);
 
   async function envoyerMaintenant(client: ClientRow) {
     if (!client.email) {
