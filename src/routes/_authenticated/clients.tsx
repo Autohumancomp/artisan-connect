@@ -64,6 +64,33 @@ export const Route = createFileRoute("/_authenticated/clients")({
   component: ClientsPage,
 });
 
+type CleTri =
+  | "nom_client"
+  | "type_equipement"
+  | "date_dernier_entretien"
+  | "date_prochaine_relance"
+  | "priorite"
+  | "statut_relance";
+
+const ORDRE_PRIORITE = { haute: 0, moyenne: 1, basse: 2 } as const;
+const ORDRE_STATUT = { a_relancer: 0, a_venir: 1, relance: 2 } as const;
+
+function comparer(a: ClientRow, b: ClientRow, cle: CleTri): number {
+  if (cle === "priorite") {
+    const pa = prioriteDe(a.date_prochaine_relance);
+    const pb = prioriteDe(b.date_prochaine_relance);
+    return (pa ? ORDRE_PRIORITE[pa] : 9) - (pb ? ORDRE_PRIORITE[pb] : 9);
+  }
+  if (cle === "statut_relance") {
+    return ORDRE_STATUT[a.statut_relance] - ORDRE_STATUT[b.statut_relance];
+  }
+  const va = a[cle] ?? "";
+  const vb = b[cle] ?? "";
+  if (!va) return 1;
+  if (!vb) return -1;
+  return va.localeCompare(vb, "fr", { numeric: true });
+}
+
 function ClientsPage() {
   const queryClient = useQueryClient();
   const envoyer = useServerFn(envoyerRelance);
