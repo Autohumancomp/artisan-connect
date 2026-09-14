@@ -1,12 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PrioriteBadge, StatutBadge } from "@/components/badges";
 import { ClientFormDialog } from "@/components/ClientFormDialog";
+import { ImportClientsDialog } from "@/components/ImportClientsDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +41,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, prioriteDe, type ClientRow } from "@/lib/fidel";
 import { envoyerRelance } from "@/lib/relance.functions";
+import { useArtisan } from "@/routes/_authenticated/route";
 
 export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({
