@@ -80,6 +80,7 @@ function Parametres() {
   if (!artisan) return null;
 
   return (
+    <div className="space-y-6">
     <form
       className="space-y-6"
       onSubmit={(event) => {
@@ -138,6 +139,22 @@ function Parametres() {
             onChange={(e) => setAdresse(e.target.value)}
             placeholder="12 rue des Artisans, 75011 Paris"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="frequence">Fréquence de relance par défaut (mois)</Label>
+          <Input
+            id="frequence"
+            type="number"
+            min={1}
+            max={120}
+            className="sm:max-w-40"
+            value={frequenceDefaut}
+            onChange={(e) => setFrequenceDefaut(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Valeur pré-remplie automatiquement à l'ajout d'un nouveau client.
+          </p>
         </div>
       </section>
 
