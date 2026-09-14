@@ -91,6 +91,36 @@ function comparer(a: ClientRow, b: ClientRow, cle: CleTri): number {
   return va.localeCompare(vb, "fr", { numeric: true });
 }
 
+function ThTri({
+  cle,
+  tri,
+  onTri,
+  children,
+}: {
+  cle: CleTri;
+  tri: { cle: CleTri; sens: "asc" | "desc" };
+  onTri: (cle: CleTri) => void;
+  children: React.ReactNode;
+}) {
+  const actif = tri.cle === cle;
+  const Icone = !actif ? ChevronsUpDown : tri.sens === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th className="px-4 py-3 font-medium">
+      <button
+        type="button"
+        onClick={() => onTri(cle)}
+        aria-label={`Trier par ${String(children)}`}
+        className={`inline-flex items-center gap-1 transition-colors hover:text-foreground ${
+          actif ? "text-foreground" : ""
+        }`}
+      >
+        {children}
+        <Icone className="size-3.5" />
+      </button>
+    </th>
+  );
+}
+
 function ClientsPage() {
   const queryClient = useQueryClient();
   const envoyer = useServerFn(envoyerRelance);
