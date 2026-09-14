@@ -189,15 +189,22 @@ function ClientsPage() {
             {clients.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setClientEdite(null);
-            setFormOuvert(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Ajouter un client
-        </Button>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setImportOuvert(true)}>
+            <Upload className="size-4" />
+            Importer
+          </Button>
+          <Button
+            className="flex-1 sm:flex-none"
+            onClick={() => {
+              setClientEdite(null);
+              setFormOuvert(true);
+            }}
+          >
+            <Plus className="size-4" />
+            Ajouter un client
+          </Button>
+        </div>
       </div>
 
       <div className="panel space-y-3 p-3">
@@ -251,12 +258,24 @@ function ClientsPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-xs text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Nom</th>
-                  <th className="px-4 py-3 font-medium">Équipement</th>
-                  <th className="px-4 py-3 font-medium">Dernier entretien</th>
-                  <th className="px-4 py-3 font-medium">Prochaine relance</th>
-                  <th className="px-4 py-3 font-medium">Priorité</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <ThTri cle="nom_client" tri={tri} onTri={basculerTri}>
+                    Nom
+                  </ThTri>
+                  <ThTri cle="type_equipement" tri={tri} onTri={basculerTri}>
+                    Équipement
+                  </ThTri>
+                  <ThTri cle="date_dernier_entretien" tri={tri} onTri={basculerTri}>
+                    Dernier entretien
+                  </ThTri>
+                  <ThTri cle="date_prochaine_relance" tri={tri} onTri={basculerTri}>
+                    Prochaine relance
+                  </ThTri>
+                  <ThTri cle="priorite" tri={tri} onTri={basculerTri}>
+                    Priorité
+                  </ThTri>
+                  <ThTri cle="statut_relance" tri={tri} onTri={basculerTri}>
+                    Statut
+                  </ThTri>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
