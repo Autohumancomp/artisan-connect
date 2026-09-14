@@ -1,12 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PrioriteBadge, StatutBadge } from "@/components/badges";
 import { ClientFormDialog } from "@/components/ClientFormDialog";
+import { ImportClientsDialog } from "@/components/ImportClientsDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +41,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, prioriteDe, type ClientRow } from "@/lib/fidel";
 import { envoyerRelance } from "@/lib/relance.functions";
+import { useArtisan } from "@/routes/_authenticated/route";
 
 export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({
@@ -51,6 +64,33 @@ export const Route = createFileRoute("/_authenticated/clients")({
   component: ClientsPage,
 });
 
+type CleTri =
+  | "nom_client"
+  | "type_equipement"
+  | "date_dernier_entretien"
+  | "date_prochaine_relance"
+  | "priorite"
+  | "statut_relance";
+
+const ORDRE_PRIORITE = { haute: 0, moyenne: 1, basse: 2 } as const;
+const ORDRE_STATUT = { a_relancer: 0, a_venir: 1, relance: 2 } as const;
+
+function comparer(a: ClientRow, b: ClientRow, cle: CleTri): number {
+  if (cle === "priorite") {
+    const pa = prioriteDe(a.date_prochaine_relance);
+    const pb = prioriteDe(b.date_prochaine_relance);
+    return (pa ? ORDRE_PRIORITE[pa] : 9) - (pb ? ORDRE_PRIORITE[pb] : 9);
+  }
+  if (cle === "statut_relance") {
+    return ORDRE_STATUT[a.statut_relance] - ORDRE_STATUT[b.statut_relance];
+  }
+  const va = a[cle] ?? "";
+  const vb = b[cle] ?? "";
+  if (!va) return 1;
+  if (!vb) return -1;
+  return va.localeCompare(vb, "fr", { numeric: true });
+}
+
 function ClientsPage() {
   const queryClient = useQueryClient();
   const envoyer = useServerFn(envoyerRelance);
@@ -62,6 +102,18 @@ function ClientsPage() {
   const [clientEdite, setClientEdite] = useState<ClientRow | null>(null);
   const [aSupprimer, setASupprimer] = useState<ClientRow | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState<string | null>(null);
+  const [importOuvert, setImportOuvert] = useState(false);
+  const [tri, setTri] = useState<{ cle: CleTri; sens: "asc" | "desc" }>({
+    cle: "date_prochaine_relance",
+    sens: "asc",
+  });
+  const { data: artisan } = useArtisan();
+
+  function basculerTri(cle: CleTri) {
+    setTri((prev) =>
+      prev.cle === cle ? { cle, sens: prev.sens === "asc" ? "desc" : "asc" } : { cle, sens: "asc" },
+    );
+  }
 
   const { data, isPending } = useQuery({
     queryKey: ["clients"],
@@ -90,7 +142,7 @@ function ClientsPage() {
 
   const clients = useMemo(() => {
     const terme = recherche.trim().toLowerCase();
-    return (data ?? []).filter((client) => {
+    const filtres = (data ?? []).filter((client) => {
       const correspond =
         !terme ||
         [client.nom_client, client.telephone, client.email, client.type_equipement]
@@ -101,7 +153,10 @@ function ClientsPage() {
         filtrePriorite === "toutes" || prioriteDe(client.date_prochaine_relance) === filtrePriorite;
       return correspond && statutOk && prioriteOk;
     });
-  }, [data, recherche, filtreStatut, filtrePriorite]);
+
+    const facteur = tri.sens === "asc" ? 1 : -1;
+    return [...filtres].sort((a, b) => comparer(a, b, tri.cle) * facteur);
+  }, [data, recherche, filtreStatut, filtrePriorite, tri]);
 
   async function envoyerMaintenant(client: ClientRow) {
     if (!client.email) {
