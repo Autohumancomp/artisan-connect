@@ -91,6 +91,36 @@ function comparer(a: ClientRow, b: ClientRow, cle: CleTri): number {
   return va.localeCompare(vb, "fr", { numeric: true });
 }
 
+function ThTri({
+  cle,
+  tri,
+  onTri,
+  children,
+}: {
+  cle: CleTri;
+  tri: { cle: CleTri; sens: "asc" | "desc" };
+  onTri: (cle: CleTri) => void;
+  children: React.ReactNode;
+}) {
+  const actif = tri.cle === cle;
+  const Icone = !actif ? ChevronsUpDown : tri.sens === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th className="px-4 py-3 font-medium">
+      <button
+        type="button"
+        onClick={() => onTri(cle)}
+        aria-label={`Trier par ${String(children)}`}
+        className={`inline-flex items-center gap-1 transition-colors hover:text-foreground ${
+          actif ? "text-foreground" : ""
+        }`}
+      >
+        {children}
+        <Icone className="size-3.5" />
+      </button>
+    </th>
+  );
+}
+
 function ClientsPage() {
   const queryClient = useQueryClient();
   const envoyer = useServerFn(envoyerRelance);
@@ -189,15 +219,22 @@ function ClientsPage() {
             {clients.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setClientEdite(null);
-            setFormOuvert(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Ajouter un client
-        </Button>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setImportOuvert(true)}>
+            <Upload className="size-4" />
+            Importer
+          </Button>
+          <Button
+            className="flex-1 sm:flex-none"
+            onClick={() => {
+              setClientEdite(null);
+              setFormOuvert(true);
+            }}
+          >
+            <Plus className="size-4" />
+            Ajouter un client
+          </Button>
+        </div>
       </div>
 
       <div className="panel space-y-3 p-3">
@@ -251,12 +288,24 @@ function ClientsPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-xs text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Nom</th>
-                  <th className="px-4 py-3 font-medium">Équipement</th>
-                  <th className="px-4 py-3 font-medium">Dernier entretien</th>
-                  <th className="px-4 py-3 font-medium">Prochaine relance</th>
-                  <th className="px-4 py-3 font-medium">Priorité</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <ThTri cle="nom_client" tri={tri} onTri={basculerTri}>
+                    Nom
+                  </ThTri>
+                  <ThTri cle="type_equipement" tri={tri} onTri={basculerTri}>
+                    Équipement
+                  </ThTri>
+                  <ThTri cle="date_dernier_entretien" tri={tri} onTri={basculerTri}>
+                    Dernier entretien
+                  </ThTri>
+                  <ThTri cle="date_prochaine_relance" tri={tri} onTri={basculerTri}>
+                    Prochaine relance
+                  </ThTri>
+                  <ThTri cle="priorite" tri={tri} onTri={basculerTri}>
+                    Priorité
+                  </ThTri>
+                  <ThTri cle="statut_relance" tri={tri} onTri={basculerTri}>
+                    Statut
+                  </ThTri>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
@@ -343,13 +392,20 @@ function ClientsPage() {
 
       <ClientFormDialog open={formOuvert} onOpenChange={setFormOuvert} client={clientEdite} />
 
+      <ImportClientsDialog
+        open={importOuvert}
+        onOpenChange={setImportOuvert}
+        frequenceDefaut={artisan?.frequence_relance_defaut ?? 12}
+      />
+
+
       <AlertDialog open={aSupprimer !== null} onOpenChange={(open) => !open && setASupprimer(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {aSupprimer?.nom_client} sera définitivement retiré de votre fichier client.
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              Êtes-vous sûr de vouloir supprimer {aSupprimer?.nom_client} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>

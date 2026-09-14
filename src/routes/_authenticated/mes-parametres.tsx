@@ -41,6 +41,7 @@ function Parametres() {
   const [emailContact, setEmailContact] = useState("");
   const [adresse, setAdresse] = useState("");
   const [modele, setModele] = useState("");
+  const [frequenceDefaut, setFrequenceDefaut] = useState("12");
 
   useEffect(() => {
     if (!artisan) return;
@@ -49,6 +50,7 @@ function Parametres() {
     setEmailContact(artisan.email_contact ?? "");
     setAdresse(artisan.adresse ?? "");
     setModele(artisan.modele_message);
+    setFrequenceDefaut(String(artisan.frequence_relance_defaut ?? 12));
   }, [artisan]);
 
   const sauver = useMutation({
@@ -62,6 +64,7 @@ function Parametres() {
           email_contact: emailContact.trim() || null,
           adresse: adresse.trim() || null,
           modele_message: modele,
+          frequence_relance_defaut: Math.min(Math.max(Number(frequenceDefaut) || 12, 1), 120),
         })
         .eq("id", artisan.id);
       if (error) throw new Error(error.message);
@@ -77,6 +80,7 @@ function Parametres() {
   if (!artisan) return null;
 
   return (
+    <div className="space-y-6">
     <form
       className="space-y-6"
       onSubmit={(event) => {
@@ -135,6 +139,22 @@ function Parametres() {
             onChange={(e) => setAdresse(e.target.value)}
             placeholder="12 rue des Artisans, 75011 Paris"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="frequence">Fréquence de relance par défaut (mois)</Label>
+          <Input
+            id="frequence"
+            type="number"
+            min={1}
+            max={120}
+            className="sm:max-w-40"
+            value={frequenceDefaut}
+            onChange={(e) => setFrequenceDefaut(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Valeur pré-remplie automatiquement à l'ajout d'un nouveau client.
+          </p>
         </div>
       </section>
 
