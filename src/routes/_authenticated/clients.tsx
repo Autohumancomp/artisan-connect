@@ -362,13 +362,20 @@ function ClientsPage() {
 
       <ClientFormDialog open={formOuvert} onOpenChange={setFormOuvert} client={clientEdite} />
 
+      <ImportClientsDialog
+        open={importOuvert}
+        onOpenChange={setImportOuvert}
+        frequenceDefaut={artisan?.frequence_relance_defaut ?? 12}
+      />
+
+
       <AlertDialog open={aSupprimer !== null} onOpenChange={(open) => !open && setASupprimer(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {aSupprimer?.nom_client} sera définitivement retiré de votre fichier client.
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              Êtes-vous sûr de vouloir supprimer {aSupprimer?.nom_client} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
