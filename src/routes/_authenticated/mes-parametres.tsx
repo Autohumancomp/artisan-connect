@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PasswordInput } from "@/components/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,6 +181,106 @@ function Parametres() {
         <Button type="submit" className="w-full sm:w-auto" disabled={sauver.isPending}>
           {sauver.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           Enregistrer
+        </Button>
+      </div>
+    </form>
+
+    <SectionSecurite email={artisan.email} />
+    </div>
+  );
+}
+
+function SectionSecurite({ email }: { email: string }) {
+  const [ancien, setAncien] = useState("");
+  const [nouveau, setNouveau] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [succes, setSucces] = useState(false);
+
+  const changer = useMutation({
+    mutationFn: async () => {
+      if (nouveau.length < 8) throw new Error("Le nouveau mot de passe doit faire au moins 8 caractères.");
+      if (nouveau !== confirmation) throw new Error("Les deux nouveaux mots de passe ne correspondent pas.");
+      const { error: erreurAncien } = await supabase.auth.signInWithPassword({
+        email,
+        password: ancien,
+      });
+      if (erreurAncien) throw new Error("Ancien mot de passe incorrect.");
+      const { error } = await supabase.auth.updateUser({ password: nouveau });
+      if (error) throw new Error(error.message);
+    },
+    onMutate: () => {
+      setErreur(null);
+      setSucces(false);
+    },
+    onSuccess: () => {
+      setAncien("");
+      setNouveau("");
+      setConfirmation("");
+      setSucces(true);
+      toast.success("Mot de passe modifié");
+    },
+    onError: (error: Error) => setErreur(error.message),
+  });
+
+  return (
+    <form
+      className="panel space-y-4 p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        changer.mutate();
+      }}
+    >
+      <div>
+        <h2 className="text-sm font-semibold">Sécurité</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Changez votre mot de passe de connexion.</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="ancien">Ancien mot de passe</Label>
+        <PasswordInput
+          id="ancien"
+          autoComplete="current-password"
+          value={ancien}
+          onChange={(e) => setAncien(e.target.value)}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="nouveau">Nouveau mot de passe</Label>
+          <PasswordInput
+            id="nouveau"
+            autoComplete="new-password"
+            value={nouveau}
+            onChange={(e) => setNouveau(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmation">Confirmation</Label>
+          <PasswordInput
+            id="confirmation"
+            autoComplete="new-password"
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {erreur ? <p className="text-sm text-destructive">{erreur}</p> : null}
+      {succes ? (
+        <p className="text-sm font-medium text-primary">Votre mot de passe a bien été modifié.</p>
+      ) : null}
+
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          variant="outline"
+          className="w-full sm:w-auto"
+          disabled={changer.isPending || !ancien || !nouveau || !confirmation}
+        >
+          {changer.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          Modifier le mot de passe
         </Button>
       </div>
     </form>
