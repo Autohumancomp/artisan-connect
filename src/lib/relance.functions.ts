@@ -21,24 +21,26 @@ export const envoyerRelance = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
+    // Fiche artisan d'abord : la policy RLS la limite à l'artisan connecté.
+    const { data: artisan, error: artisanError } = await supabase
+      .from("artisans")
+      .select("id, nom_entreprise, email, email_contact, adresse, telephone, modele_message")
+      .maybeSingle();
+
+    if (artisanError) throw new Error(artisanError.message);
+    if (!artisan) throw new Error("Fiche entreprise introuvable.");
+
+    // Filtre explicite redondant avec les policies RLS (sécurité en profondeur).
     const { data: client, error: clientError } = await supabase
       .from("clients")
       .select("id, nom_client, email, type_equipement, artisan_id")
       .eq("id", data.clientId)
+      .eq("artisan_id", artisan.id)
       .maybeSingle();
 
     if (clientError) throw new Error(clientError.message);
     if (!client) throw new Error("Client introuvable.");
     if (!client.email) throw new Error("Ce client n'a pas d'adresse email.");
-
-    const { data: artisan, error: artisanError } = await supabase
-      .from("artisans")
-      .select("nom_entreprise, email, email_contact, adresse, telephone, modele_message")
-      .eq("id", client.artisan_id)
-      .maybeSingle();
-
-    if (artisanError) throw new Error(artisanError.message);
-    if (!artisan) throw new Error("Fiche entreprise introuvable.");
 
     const corps = appliquerModele(
       artisan.modele_message,
