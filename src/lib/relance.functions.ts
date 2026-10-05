@@ -86,7 +86,7 @@ export const envoyerRelance = createServerFn({ method: "POST" })
       console.error(`Resend a refusé l'envoi [${response.status}]: ${body}`);
       await supabase.from("historique_relances").insert({
         client_id: client.id,
-        artisan_id: client.artisan_id,
+        artisan_id: artisan.id,
         destinataire: client.email,
         statut: "echec",
         erreur: `[${response.status}] ${body}`.slice(0, 500),
