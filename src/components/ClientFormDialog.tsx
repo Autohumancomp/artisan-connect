@@ -122,7 +122,11 @@ export function ClientFormDialog({
       };
 
       if (client) {
-        const { error } = await supabase.from("clients").update(payload).eq("id", client.id);
+        const { error } = await supabase
+          .from("clients")
+          .update(payload)
+          .eq("id", client.id)
+          .eq("artisan_id", artisan!.id);
         if (error) throw new Error(error.message);
       } else {
         const { error } = await supabase.from("clients").insert({

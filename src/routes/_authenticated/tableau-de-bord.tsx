@@ -5,6 +5,7 @@ import { AlertTriangle, CalendarClock, Loader2, MailCheck, Users } from "lucide-
 import { PrioriteBadge } from "@/components/badges";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, joursRestants, prioriteDe, type ClientRow } from "@/lib/fidel";
+import { useArtisan } from "@/routes/_authenticated/route";
 
 export const Route = createFileRoute("/_authenticated/tableau-de-bord")({
   head: () => ({
@@ -33,12 +34,18 @@ function debutDuMois(): string {
 }
 
 function Dashboard() {
+  const { data: artisan } = useArtisan();
+  const artisanId = artisan?.id ?? null;
+
   const { data, isPending } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", artisanId],
+    enabled: artisanId !== null,
     queryFn: async (): Promise<ClientRow[]> => {
+      // Filtre explicite redondant avec les policies RLS (sécurité en profondeur).
       const { data, error } = await supabase
         .from("clients")
         .select("*")
+        .eq("artisan_id", artisanId!)
         .order("date_prochaine_relance", { ascending: true, nullsFirst: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as ClientRow[];
