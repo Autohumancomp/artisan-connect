@@ -19,16 +19,26 @@ export const envoyerRelance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId, claims } = context;
+    const emailConnecte = String((claims as { email?: string })?.email ?? "").toLowerCase();
 
-    // Fiche artisan d'abord : la policy RLS la limite à l'artisan connecté.
-    const { data: artisan, error: artisanError } = await supabase
+    // Fiche artisan de l'utilisateur connecté, filtrée explicitement
+    // (compte lié OU fiche non liée au même email) et abonnement actif.
+    const filtreProprietaire = emailConnecte
+      ? `user_id.eq.${userId},and(user_id.is.null,email.ilike.${emailConnecte})`
+      : `user_id.eq.${userId}`;
+    const { data: artisans, error: artisanError } = await supabase
       .from("artisans")
-      .select("id, nom_entreprise, email, email_contact, adresse, telephone, modele_message")
-      .maybeSingle();
+      .select("id, user_id, nom_entreprise, email, email_contact, adresse, telephone, modele_message, statut_abonnement")
+      .or(filtreProprietaire)
+      .eq("statut_abonnement", "actif")
+      .limit(2);
 
     if (artisanError) throw new Error(artisanError.message);
-    if (!artisan) throw new Error("Fiche entreprise introuvable.");
+    const artisan = (artisans ?? []).find(
+      (a) => a.user_id === userId || (a.user_id === null && a.email.toLowerCase() === emailConnecte),
+    );
+    if (!artisan) throw new Error("Client introuvable.");
 
     // Filtre explicite redondant avec les policies RLS (sécurité en profondeur).
     const { data: client, error: clientError } = await supabase
