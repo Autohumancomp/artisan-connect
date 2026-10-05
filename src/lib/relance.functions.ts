@@ -99,13 +99,14 @@ export const envoyerRelance = createServerFn({ method: "POST" })
     const { error: updateError } = await supabase
       .from("clients")
       .update({ statut_relance: "relance", derniere_relance_envoyee: envoiLe })
-      .eq("id", client.id);
+      .eq("id", client.id)
+      .eq("artisan_id", artisan.id);
 
     if (updateError) throw new Error(updateError.message);
 
     const { error: historiqueError } = await supabase.from("historique_relances").insert({
       client_id: client.id,
-      artisan_id: client.artisan_id,
+      artisan_id: artisan.id,
       destinataire: client.email,
       statut: "envoye",
       envoye_le: envoiLe,
