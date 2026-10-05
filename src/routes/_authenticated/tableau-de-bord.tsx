@@ -5,6 +5,7 @@ import { AlertTriangle, CalendarClock, Loader2, MailCheck, Users } from "lucide-
 import { PrioriteBadge } from "@/components/badges";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, joursRestants, prioriteDe, type ClientRow } from "@/lib/fidel";
+import { useArtisan } from "@/routes/_authenticated/route";
 
 export const Route = createFileRoute("/_authenticated/tableau-de-bord")({
   head: () => ({

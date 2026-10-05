@@ -138,6 +138,7 @@ function ClientsPage() {
     sens: "asc",
   });
   const { data: artisan } = useArtisan();
+  const artisanId = artisan?.id ?? null;
 
   function basculerTri(cle: CleTri) {
     setTri((prev) =>
@@ -146,11 +147,14 @@ function ClientsPage() {
   }
 
   const { data, isPending } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", artisanId],
+    enabled: artisanId !== null,
     queryFn: async (): Promise<ClientRow[]> => {
+      // Filtre explicite redondant avec les policies RLS (sécurité en profondeur).
       const { data, error } = await supabase
         .from("clients")
         .select("*")
+        .eq("artisan_id", artisanId!)
         .order("date_prochaine_relance", { ascending: true, nullsFirst: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as ClientRow[];
@@ -159,7 +163,11 @@ function ClientsPage() {
 
   const supprimer = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("clients").delete().eq("id", id);
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", id)
+        .eq("artisan_id", artisanId!);
       if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
